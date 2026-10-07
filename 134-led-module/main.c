@@ -1,5 +1,6 @@
 #include "led.h"
 #include "log.h"
+#include "device.h"
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
 #include <stdio.h>
@@ -29,6 +30,10 @@ void handle_command(int command)
     else if (command == 'v')
     {
         log_version();
+    }
+    else if (command == 'i')
+    {
+        device_info();
     }
     else
     {
