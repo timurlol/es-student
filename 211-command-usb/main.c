@@ -41,7 +41,7 @@ void handle_command(const char *command)	//список реагирования
     }
     else
     {
-        LOG_ERR("unknown command: %c\n", command);
+        LOG_ERR("unknown command: %s\n", command);
     }
 }
 
