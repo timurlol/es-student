@@ -1,0 +1,28 @@
+задание: 2.1.1
+проект: 211-command-usb
+устройство: 2e8a:000a
+серийный номер: 53032847306B7C1C
+порт: /dev/ttyACM0
+начало: 2026-10-08T09:36:46
+   0.001 --> enable
+   0.134 <-- enable
+   0.134 <-- dbg read_line:64 got enable
+   0.134 <-- inf handle_command:27 led on
+   2.137 --> disable
+   2.294 <-- disable
+   2.295 <-- dbg read_line:64 got disable
+   2.296 <-- inf handle_command:32 led off
+   4.298 --> info
+   4.395 <-- info
+   4.396 <-- dbg read_line:64 got info
+   4.396 <-- project: 211-command-usb
+   4.397 <-- repo: https://github.com/timurlol/es-student
+   4.397 <-- board: pico
+   4.398 <-- serial: 53032847306B7C1C
+   4.398 <-- chip: manufacturer 0x927, part 0x0002, revision 2
+   4.399 <-- pico-sdk: 2.3.0
+   6.401 --> nosuchcommand
+   6.677 <-- nosuchcommand
+   6.678 <-- dbg read_line:64 got nosuchcommand
+   6.678 <-- err handle_command:44 unknown command: D
+итог: отправлено команд 4, принято строк 17
