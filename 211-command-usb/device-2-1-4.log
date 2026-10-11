@@ -1,0 +1,50 @@
+задание: 2.1.4
+проект: 211-command-usb
+устройство: 2e8a:000a
+серийный номер: 53032847306B7C1C
+порт: /dev/ttyACM0
+начало: 2026-10-11T13:20:03
+   0.000 --> fw_info
+   0.145 <-- dbg read_line:104 got [A[A[A[A[A[A[A[A[A[A
+   0.146 <-- err handle_command:85 unknown command: [A[A[A[A[A[A[A[A[A[A
+   2.148 --> fw_info
+   2.305 <-- fw_info
+   2.305 <-- dbg read_line:104 got fw_info
+   2.306 <-- object          address     value
+   2.307 <-- main            0x10000328  0xb5f0
+   2.307 <-- fw_info         0x100006a4  0x4b46
+   2.308 <-- commands        0x10007de0
+   2.308 <-- enable          0x10007de4
+   2.309 <-- disable         0x10007dec
+   2.309 <-- info            0x10007df4
+   2.310 <-- version         0x10007dfc
+   2.310 <-- ping            0x10007e04
+   2.311 <-- mem_info        0x10007e0c
+   2.311 <-- fw_info         0x10007e14
+   2.312 <-- DEVICE_PROJECT  0x10007938  211-command-usb
+   2.312 <-- DEVICE_BOARD    0x1000798c  pico
+   2.312 <-- data_variable   0x20000f98  104
+   2.313 <-- bss_variable    0x20001e80  4
+   2.313 <-- stack_variable  0x20041f7c  1946
+   2.313 <-- heap_variable   0x20002378  1951
+   4.316 --> fw_info
+   4.467 <-- fw_info
+   4.468 <-- dbg read_line:104 got fw_info
+   4.469 <-- object          address     value
+   4.470 <-- main            0x10000328  0xb5f0
+   4.470 <-- fw_info         0x100006a4  0x4b46
+   4.470 <-- commands        0x10007de0
+   4.471 <-- enable          0x10007de4
+   4.471 <-- disable         0x10007dec
+   4.471 <-- info            0x10007df4
+   4.471 <-- version         0x10007dfc
+   4.472 <-- ping            0x10007e04
+   4.472 <-- mem_info        0x10007e0c
+   4.473 <-- fw_info         0x10007e14
+   4.473 <-- DEVICE_PROJECT  0x10007938  211-command-usb
+   4.474 <-- DEVICE_BOARD    0x1000798c  pico
+   4.474 <-- data_variable   0x20000f98  105
+   4.475 <-- bss_variable    0x20001e80  5
+   4.476 <-- stack_variable  0x20041f7c  1946
+   4.476 <-- heap_variable   0x20002378  1951
+итог: отправлено команд 3, принято строк 40
