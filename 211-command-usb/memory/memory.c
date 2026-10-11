@@ -53,18 +53,15 @@ void fw_info(void)
 	
 	printf("object          address     value\n");
 	
-	printf("%-15s 0x%08x  0x%04x\n","main",main_code, *main_code);
-	printf("%-15s 0x%08x  0x%04x\n","fw_info",fw_info_code, *fw_info_code);
+	printf("%-15s 0x%08x  0x%04x\n","main",&main, *main_code);
+	printf("%-15s 0x%08x  0x%04x\n","fw_info",&fw_info, *fw_info_code);
 	
 	printf("%-15s 0x%08x\n","commands",&commands[0]);
 	
-	printf("%-15s 0x%08x\n","enable",&(commands[0].handler) );
-	printf("%-15s 0x%08x\n","disable",&(commands[1].handler) );
-	printf("%-15s 0x%08x\n","info",&(commands[2].handler) );
-	printf("%-15s 0x%08x\n","version",&(commands[3].handler) );
-	printf("%-15s 0x%08x\n","ping",&(commands[4].handler) );
-	printf("%-15s 0x%08x\n","mem_info",&(commands[5].handler) );
-	printf("%-15s 0x%08x\n","fw_info",&(commands[6].handler) );
+	for(int i=0;i<command_count;i++)
+	{
+		printf("%-15s 0x%08x\n",commands[i].name, (commands[i].handler) );
+	}	
 	
 	printf("%-15s 0x%08x  %s\n","DEVICE_PROJECT",&DEVICE_PROJECT, DEVICE_PROJECT );
 	printf("%-15s 0x%08x  %s\n","DEVICE_BOARD",&DEVICE_BOARD, DEVICE_BOARD );
