@@ -1,6 +1,7 @@
 #include "memory.h"
 #include "command.h"
 #include "device.h"
+#include "led.h"
 #include <stdio.h>
 #include "command.h"
 #include <stdlib.h>
@@ -10,6 +11,8 @@
 
 #define ROM_SIZE 16384 
 #define SRAM_SIZE 270336
+#define VECTOR_TABLE 0x10000100
+#define GPIO_IN 0xd0000004
 
 uint32_t data_variable = 100;
 uint32_t bss_variable;
@@ -116,3 +119,20 @@ void mem_info(void)
 
 }
 
+void boot_info(void)
+{
+	const uint32_t *vectors = (const uint32_t *)VECTOR_TABLE;
+	uint32_t stack_top = vectors[0];
+	uint32_t reset_handler = vectors[1];
+
+	volatile uint32_t *gpio_in = (volatile uint32_t *)GPIO_IN;
+	uint32_t level = (*gpio_in >> led_pin()) & 1u;
+
+	printf("vector table   0x%08x\n", VECTOR_TABLE);
+	printf("  stack top    0x%08x\n", stack_top);
+	printf("  reset        0x%08x\n", reset_handler);
+	printf("  reset (even) 0x%08x\n", reset_handler & ~1u);
+	printf("gpio in        0x%08x\n", GPIO_IN);
+	printf("  led bit      %u\n", level);
+	printf("  gpio_get     %u\n", gpio_get(led_pin()));
+}
