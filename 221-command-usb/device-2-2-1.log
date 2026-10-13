@@ -1,0 +1,26 @@
+задание: 2.2.1
+проект: 221-command-time
+устройство: 2e8a:000a
+серийный номер: 53032847306B7C1C
+порт: /dev/ttyACM0
+начало: 2026-10-13T20:11:54
+   0.000 --> clk_info
+   0.171 <-- clk_info
+   0.171 <-- dbg read_line:120 got clk_info
+   0.172 <-- signal     set_khz measured_khz
+   0.173 <-- clk_ref      12000        12001
+   0.174 <-- clk_sys     125000       125000
+   0.175 <-- clk_peri    125000       125000
+   0.176 <-- clk_usb      48000        48000
+   0.177 <-- clk_adc      48000        48000
+   0.178 <-- rosc             -         5859
+   2.181 --> info
+   2.278 <-- info
+   2.280 <-- dbg read_line:120 got info
+   2.280 <-- project: 221-command-time
+   2.281 <-- repo: https://github.com/timurlol/es-student
+   2.282 <-- board: pico
+   2.282 <-- serial: 53032847306B7C1C
+   2.283 <-- chip: manufacturer 0x927, part 0x0002, revision 2
+   2.283 <-- pico-sdk: 2.3.0
+итог: отправлено команд 2, принято строк 17
