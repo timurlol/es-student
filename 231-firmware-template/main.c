@@ -6,10 +6,6 @@
 #include <string.h>
 #include "stdio-text-protocol.h"
 #include "api.h"
-#define LINE_SIZE 32
-
-char line[LINE_SIZE];
-uint line_length = 0;
 
 const uint BLINK_HALF_PERIOD_MS = 500;
 
@@ -33,7 +29,7 @@ int main()
 	led_init();
 	profiling_init();
     stdio_text_protocol_init();
-    
+
 	while(1)
 	{
 		profiling_iteration();
