@@ -69,11 +69,10 @@ const command_t *stdio_text_protocol_handle(void)
         if(buffer_caret > 0)
         {
             buffer_caret = buffer_caret - 1;
-            
-            // ANSI-последовательности:
-            // \033[D — сдвинуть курсор на 1 позицию влево
-            // \033[K — стереть всё от курсора до конца строки
-            printf("\033[D\033[K");
+
+            putchar('\b');
+            putchar(' ');
+            putchar('\b');
         }
         return NULL;
     }
