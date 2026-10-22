@@ -18,3 +18,6 @@ led_state_t led_task_get_state(void);
 // false — период не принят
 bool led_task_set_period_ms(uint32_t period_ms);
 uint32_t led_task_get_period_ms(void);
+
+// Перевести светодиод в следующее состояние по кругу
+void led_task_next_state(void);
