@@ -2,6 +2,7 @@
 #include "device.h"
 #include "profiling.h"
 #include "button-task.h"
+#include "pi-task.h"
 #include "pico/stdlib.h"
 #include <stdio.h>
 #include <stdint.h>
@@ -62,48 +63,60 @@ static void clbk_info(const command_t *command)
     device_info();
 }
 
-static void clbk_calc_pi(const command_t *command)
+static void clbk_pi_start(const command_t *command)
 {
-    uint64_t start_us = time_us_64();
-    uint32_t value;
-    if(is_pi_calculating)
+    uint32_t terms = 1000000; // значение по умолчанию
+
+    if (command->argc == 1)
+    {
+        if (!parse_u32(command->argv[0], &terms))
+        {
+            printf("error: usage pi_start [<terms>]\n");
+            return;
+        }
+        if (terms == 0)
+        {
+            printf("error: terms must be greater than 0\n");
+            return;
+        }
+    }
+    else if (command->argc > 1)
+    {
+        printf("error: usage pi_start [<terms>]\n");
+        return;
+    }
+
+    if (!pi_task_start(terms))
     {
         printf("error: pi is busy\n");
         return;
     }
-    if(command->argc == 0)
+
+    printf("pi: started, %u terms\n", (unsigned)terms);
+}
+
+static void clbk_pi(const command_t *command)
+{
+    double pi;
+    uint32_t time_ms;
+
+    if (pi_task_get_result(&pi, &time_ms))
     {
-        is_pi_calculating = true;
-        pi_result = calc_pi(CALC_PI_TERMS);
-    }
-    else if(command->argc == 1)
-    {
-        if(parse_u32(command->argv[0],&value))
-        {
-            if(value == 0)
-            {
-                printf("error: terms must be greater than 0\n");
-                return;
-            }
-            is_pi_calculating = true;
-            pi_result = calc_pi(value);
-        }
-        else
-        {
-            printf("error: usage calc_pi [<terms>]\n");
-            return;
-        }
-    }
-    else
-    {
-        printf("error: usage calc_pi [<terms>]\n");
+        printf("pi: %.9f in %u ms\n", pi, (unsigned)time_ms);
         return;
     }
 
-    uint64_t spent_us = time_us_64() - start_us;
-    is_pi_calculating = false;
-    printf("pi: %.9f\n", pi_result);
-    printf("time: %llu ms\n", spent_us / 1000);
+    switch (pi_task_get_state())
+    {
+    case PI_STATE_NOT_STARTED:
+        printf("pi: not started\n");
+        break;
+    case PI_STATE_RUNNING:
+        printf("pi: running\n");
+        break;
+    default:
+        break;
+    }
 }
 
 static void clbk_uptime(const command_t *command)
@@ -196,7 +209,8 @@ static void clbk_button(const command_t *command)
 
 const api_command_t api_commands[] = {
     { "info",            "Print device info",           clbk_info },
-    { "calc_pi",         "Calculate Pi (Leibniz)",      clbk_calc_pi },
+    { "pi_start",        "Start pi calculation [<terms>]", clbk_pi_start },
+    { "pi",              "Print pi result or state",       clbk_pi },
     { "uptime",          "Print uptime in ms",          clbk_uptime },
     { "main_time_exec",  "Print loop iteration time",   clbk_main_time_exec },
     { "main_time_reset", "Reset max iteration time",    clbk_main_time_reset },
