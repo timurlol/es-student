@@ -60,7 +60,20 @@ double calc_pi(uint terms)
 
 static void clbk_info(const command_t *command)
 {
-    device_info();
+    device_info_t info;
+    device_get_info(&info);
+
+    printf("name: %s\n", info.name);
+    printf("version: %s\n", info.version);
+    printf("project: %s\n", info.project);
+    printf("repo: %s\n", info.repo);
+    printf("board: %s\n", info.board);
+    printf("serial: %s\n", info.serial);
+    printf("chip: manufacturer 0x%03x, part 0x%04x, revision %u\n", 
+           (unsigned)info.manufacturer, 
+           (unsigned)info.part, 
+           (unsigned)info.revision);
+    printf("pico-sdk: %s\n", info.sdk_version);
 }
 
 static void clbk_pi_start(const command_t *command)
@@ -124,17 +137,20 @@ static void clbk_uptime(const command_t *command)
     printf("uptime: %llu ms\n", time_us_64() / 1000);
 }
 
-static void clbk_main_time_exec(const command_t *command)
+static void clbk_profiling(const command_t *command)
 {
-    printf("iteration avg %.2f us, max %u us\n",
-           profiling_avg_us(),
-           (unsigned)profiling_max_us());
-}
+    profiling_result_t result;
 
-static void clbk_main_time_reset(const command_t *command)
-{
-    profiling_reset_max();
-    printf("max reset\n");
+    for (uint32_t i = 0; i < PROFILING_MAX_STOPWATCHES; i++)
+    {
+        if (profiling_get(i, &result)) { 
+            printf("%-10s count %-10u mean %.2f us  max %u us\n", 
+               result.name, 
+               (unsigned)result.count, 
+               result.mean, 
+               (unsigned)result.max);
+        }
+    }
 }
 
 // Общий ответ: состояние и период светодиода
@@ -212,13 +228,12 @@ const api_command_t api_commands[] = {
     { "pi_start",        "Start pi calculation [<terms>]", clbk_pi_start },
     { "pi",              "Print pi result or state",       clbk_pi },
     { "uptime",          "Print uptime in ms",          clbk_uptime },
-    { "main_time_exec",  "Print loop iteration time",   clbk_main_time_exec },
-    { "main_time_reset", "Reset max iteration time",    clbk_main_time_reset },
     { "led_enable",      "Turn led on",                 clbk_led_enable },
     { "led_disable",     "Turn led off",                clbk_led_disable },
     { "led_blink",       "Blink led",                   clbk_led_blink },
     { "led_period",      "Set blink period in ms",      clbk_led_period },
     { "button",          "Print button state and press count", clbk_button },
+    { "profiling",       "Prints the results of all initialized stopwatches since the last reset in ms", clbk_profiling },
 };
 
 const uint32_t api_command_count = sizeof(api_commands) / sizeof(api_commands[0]);
