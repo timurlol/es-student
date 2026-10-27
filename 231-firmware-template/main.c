@@ -1,5 +1,4 @@
 #include "log.h"
-#include "device.h"
 #include "profiling.h"
 #include <stdio.h>
 #include <string.h>
