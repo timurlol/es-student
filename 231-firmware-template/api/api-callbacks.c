@@ -238,7 +238,7 @@ const api_command_t api_commands[] = {
     { "led_blink",       "Blink led",                   clbk_led_blink },
     { "led_period",      "Set blink period in ms",      clbk_led_period },
     { "button",          "Print button state and press count", clbk_button },
-    { "button",          "Reset all stopwatches", clbk_profiling_reset },
+    { "profiling_reset", "Reset all stopwatches", clbk_profiling_reset },
     { "profiling",       "Prints the results of all initialized stopwatches since the last reset in ms", clbk_profiling },
 };
 
