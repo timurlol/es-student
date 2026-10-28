@@ -3,6 +3,7 @@
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
 
+#include "systime/systime.h"
 #include "led-task/led-task.h"
 
 // Кнопка замыкает GP13 на землю, вывод подтянут к питанию
@@ -22,7 +23,6 @@ static button_state_t button_state;
 static uint64_t change_us;
 static uint32_t press_count;
 
-// Нажатая кнопка замыкает вывод на землю и даёт ноль
 static bool button_level_pressed(void)
 {
     return gpio_get(BUTTON_PIN) == 0;
@@ -42,12 +42,11 @@ void button_task_init(void)
 void button_task_handle(void)
 {
     bool pressed = button_level_pressed();
-    uint64_t now_us = time_us_64();
+    uint64_t now_us = systime_us();
 
     switch (button_state)
     {
     case BUTTON_STATE_RELEASED:
-        // Уровень сменился — запомнить время и проверить, продержится ли он
         if (pressed)
         {
             change_us = now_us;
@@ -56,12 +55,10 @@ void button_task_handle(void)
         break;
 
     case BUTTON_STATE_PRESSING:
-        // Уровень вернулся раньше порога — это был дребезг или помеха
         if (!pressed)
         {
             button_state = BUTTON_STATE_RELEASED;
         }
-        // Уровень продержался порог — нажатие состоялось
         else if (now_us - change_us >= BUTTON_DEBOUNCE_US)
         {
             button_state = BUTTON_STATE_PRESSED;
@@ -71,7 +68,6 @@ void button_task_handle(void)
         break;
 
     case BUTTON_STATE_PRESSED:
-        // Уровень сменился — запомнить время и проверить отпускание
         if (!pressed)
         {
             change_us = now_us;
@@ -80,12 +76,10 @@ void button_task_handle(void)
         break;
 
     case BUTTON_STATE_RELEASING:
-        // Уровень вернулся раньше порога — кнопка всё ещё нажата
         if (pressed)
         {
             button_state = BUTTON_STATE_PRESSED;
         }
-        // Уровень продержался порог — отпускание состоялось
         else if (now_us - change_us >= BUTTON_DEBOUNCE_US)
         {
             button_state = BUTTON_STATE_RELEASED;
@@ -94,8 +88,6 @@ void button_task_handle(void)
     }
 }
 
-// Кнопка нажата и в «нажата», и в «отпускание?»: пока отпускание
-// не подтвердилось, кнопку считают нажатой
 bool button_task_is_pressed(void)
 {
     return button_state == BUTTON_STATE_PRESSED

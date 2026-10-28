@@ -1,9 +1,10 @@
 #include "api.h"
-#include "device.h"
-#include "profiling.h"
+#include "firmware.h"
+#include "device/device.h"
+#include "profiling/profiling.h"
+#include "systime/systime.h"
 #include "button-task.h"
 #include "pi-task.h"
-#include "pico/stdlib.h"
 #include <stdio.h>
 #include <stdint.h>
 #include "api-commands.h"
@@ -14,46 +15,22 @@
 
 #include "led-task/led-task.h"
 
-#define CALC_PI_TERMS 1000000
-volatile double pi_result;
-static volatile bool is_pi_calculating = false;
-
 // Число без знака из десятичной записи. false — в записи не только цифры
 // или число не помещается в uint32_t.
 static bool parse_u32(const char *text, uint32_t *value)
 {
-    // strtoul приняла бы и знак: из "-1" получилось бы 4294967295
     if (!isdigit((unsigned char)text[0]))
-    {
         return false;
-    }
 
     char *end;
     errno = 0;
     unsigned long number = strtoul(text, &end, 10);
 
-    // после числа остались символы или число не поместилось
     if (*end != '\0' || errno == ERANGE || number > UINT32_MAX)
-    {
         return false;
-    }
 
     *value = (uint32_t)number;
     return true;
-}
-
-double calc_pi(uint terms)
-{
-    double sum = 0.0;
-    double sign = 1.0;
-
-    for (uint k = 0; k < terms; k++)
-    {
-        sum += sign / (2.0 * k + 1.0);
-        sign = -sign;
-    }
-
-    return sum * 4.0;
 }
 
 // --- Обработчики команд (callbacks) ---
@@ -63,22 +40,22 @@ static void clbk_info(const command_t *command)
     device_info_t info;
     device_get_info(&info);
 
-    printf("name: %s\n", info.name);
-    printf("version: %s\n", info.version);
-    printf("project: %s\n", info.project);
-    printf("repo: %s\n", info.repo);
+    printf("name: %s\n", FIRMWARE_NAME);
+    printf("version: %s\n", FIRMWARE_VERSION);
+    printf("project: %s\n", FIRMWARE_PROJECT);
+    printf("repo: %s\n", FIRMWARE_REPO);
     printf("board: %s\n", info.board);
     printf("serial: %s\n", info.serial);
-    printf("chip: manufacturer 0x%03x, part 0x%04x, revision %u\n", 
-           (unsigned)info.manufacturer, 
-           (unsigned)info.part, 
+    printf("chip: manufacturer 0x%03x, part 0x%04x, revision %u\n",
+           (unsigned)info.manufacturer,
+           (unsigned)info.part,
            (unsigned)info.revision);
     printf("pico-sdk: %s\n", info.sdk_version);
 }
 
 static void clbk_pi_start(const command_t *command)
 {
-    uint32_t terms = 1000000; // значение по умолчанию
+    uint32_t terms = 1000000;
 
     if (command->argc == 1)
     {
@@ -134,28 +111,39 @@ static void clbk_pi(const command_t *command)
 
 static void clbk_uptime(const command_t *command)
 {
-    printf("uptime: %llu ms\n", time_us_64() / 1000);
+    printf("uptime: %llu ms\n", (unsigned long long)systime_ms());
 }
 
 static void clbk_profiling(const command_t *command)
 {
+#if PROFILING_ENABLED
     profiling_result_t result;
-
     for (uint32_t i = 0; i < PROFILING_MAX_STOPWATCHES; i++)
     {
-        if (profiling_get(i, &result)) { 
-            printf("%-10s count %-10u mean %.2f us  max %u us\n", 
-               result.name, 
-               (unsigned)result.count, 
-               result.mean, 
-               (unsigned)result.max);
+        if (profiling_get(i, &result))
+        {
+            printf("%-10s count %-10u mean %.2f us  max %u us\n",
+                   result.name,
+                   (unsigned)result.count,
+                   result.mean,
+                   (unsigned)result.max);
         }
     }
+#else
+    (void)command;
+    printf("profiling is disabled in this build\n");
+#endif
 }
 
 static void clbk_profiling_reset(const command_t *command)
 {
+#if PROFILING_ENABLED
+    (void)command;
     profiling_reset();
+#else
+    (void)command;
+    printf("profiling is disabled in this build\n");
+#endif
 }
 
 // Общий ответ: состояние и период светодиода
@@ -231,14 +219,14 @@ static void clbk_button(const command_t *command)
 const api_command_t api_commands[] = {
     { "info",            "Print device info",           clbk_info },
     { "pi_start",        "Start pi calculation [<terms>]", clbk_pi_start },
-    { "pi",              "Print pi result or state",       clbk_pi },
+    { "pi",              "Print pi result or state",    clbk_pi },
     { "uptime",          "Print uptime in ms",          clbk_uptime },
     { "led_enable",      "Turn led on",                 clbk_led_enable },
     { "led_disable",     "Turn led off",                clbk_led_disable },
     { "led_blink",       "Blink led",                   clbk_led_blink },
     { "led_period",      "Set blink period in ms",      clbk_led_period },
     { "button",          "Print button state and press count", clbk_button },
-    { "profiling_reset", "Reset all stopwatches", clbk_profiling_reset },
+    { "profiling_reset", "Reset all stopwatches",       clbk_profiling_reset },
     { "profiling",       "Prints the results of all initialized stopwatches since the last reset in ms", clbk_profiling },
 };
 
