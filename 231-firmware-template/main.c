@@ -1,14 +1,15 @@
-#include "logging/log.h"
 #include "firmware.h"
+#include "logging/log.h"
 #include "profiling/profiling.h"
+#include "platform/platform.h"
+#include "stdio-text-protocol/stdio-text-protocol.h"
+#include "api/api.h"
+#include "led-task/led-task.h"
+#include "button-task/button-task.h"
+#include "pi-task/pi-task.h"
+
 #include <stdio.h>
 #include <string.h>
-#include "pico/stdlib.h"  
-#include "stdio-text-protocol/stdio-text-protocol.h"
-#include "api.h"
-#include "led-task.h"
-#include "button-task.h"
-#include "pi-task.h"
 
 typedef enum {
     STOPWATCH_LOOP = 0,
@@ -20,9 +21,10 @@ typedef enum {
 
 int main()
 {
-    LOG_INF("%s %s\n", FIRMWARE_NAME, FIRMWARE_VERSION);
+    // platform_init() заменяет stdio_init_all() и настраивает GPIO
+    platform_init();
 
-    stdio_init_all();
+    LOG_INF("%s %s\n", FIRMWARE_NAME, FIRMWARE_VERSION);
 
     profiling_stopwatch_init(STOPWATCH_LOOP,    "loop");
     profiling_stopwatch_init(STOPWATCH_COMMAND, "command");
@@ -31,7 +33,8 @@ int main()
     profiling_stopwatch_init(STOPWATCH_PI,      "pi");
 
     led_task_init();
-    button_task_init();
+    // Связь кнопки и светодиода задаётся здесь, а не внутри задачи кнопки
+    button_task_init(led_task_next_state);
     pi_task_init();
     stdio_text_protocol_init();
 

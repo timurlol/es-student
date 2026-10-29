@@ -1,7 +1,7 @@
 #pragma once
 
-#include "stdio-text-protocol/stdio-text-protocol.h"
-#include <stdio.h>
+#include "api/api.h"
+#include <stdint.h>
 
 // обработчик команды: получает имя и аргументы
 typedef void (*api_callback_t)(const command_t *command);
@@ -14,4 +14,5 @@ typedef struct
     api_callback_t callback;
 } api_command_t;
 
-void api_handle(const command_t *command);
+extern const api_command_t api_commands[];
+extern const uint32_t api_command_count;

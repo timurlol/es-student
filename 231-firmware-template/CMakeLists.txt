@@ -14,33 +14,55 @@ add_compile_options(-Wall)
 # libs лежит вне папки проекта: второй аргумент задаёт каталог сборки
 add_subdirectory(../libs ${CMAKE_BINARY_DIR}/libs)
 
-add_executable(${PROJECT_NAME}
-   ${CMAKE_CURRENT_SOURCE_DIR}/main.c
-   ${CMAKE_CURRENT_SOURCE_DIR}/led-task/led-task.c
-   ${CMAKE_CURRENT_SOURCE_DIR}/button-task/button-task.c
-   ${CMAKE_CURRENT_SOURCE_DIR}/pi-task/pi-task.c
-   ${CMAKE_CURRENT_SOURCE_DIR}/api/api.c
-   ${CMAKE_CURRENT_SOURCE_DIR}/api/api-callbacks.c
+# --- Железо прибора: единственное место проекта с SDK ---
+add_library(platform STATIC
+    platform/platform.c
+)
+target_include_directories(platform PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+target_link_libraries(platform PRIVATE
+    pico_stdlib
 )
 
+# --- Логика прибора: задачи и команды, без SDK ---
+add_library(logic STATIC
+    logic/api/api.c
+    logic/api/api-callbacks.c
+    logic/led-task/led-task.c
+    logic/button-task/button-task.c
+    logic/pi-task/pi-task.c
+)
+target_include_directories(logic PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/logic
+)
+target_link_libraries(logic
+    PUBLIC
+        stdio_text_protocol
+    PRIVATE
+        platform
+        systime
+        profiling
+        device
+        logging
+)
+
+# --- Прошивка ---
+add_executable(${PROJECT_NAME}
+    main.c
+)
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/led-task
-    ${CMAKE_CURRENT_SOURCE_DIR}/button-task
-    ${CMAKE_CURRENT_SOURCE_DIR}/pi-task
-    ${CMAKE_CURRENT_SOURCE_DIR}/api
 )
-
 target_link_libraries(${PROJECT_NAME}
-   pico_stdlib
-   device
-   logging
-   profiling
-   stdio_text_protocol
-   systime
+    pico_stdlib
+    platform
+    logic
+    profiling
+    logging
+    systime
 )
 
-# выключатель профилирования: 0 — вызовов секундомеров в образе нет
 target_compile_definitions(profiling PUBLIC
     PROFILING_ENABLED=1
 )

@@ -1,22 +1,18 @@
-#include "api.h"
+#include "api/api-commands.h"
 #include "firmware.h"
 #include "device/device.h"
 #include "profiling/profiling.h"
 #include "systime/systime.h"
-#include "button-task.h"
-#include "pi-task.h"
+#include "led-task/led-task.h"
+#include "button-task/button-task.h"
+#include "pi-task/pi-task.h"
+
 #include <stdio.h>
 #include <stdint.h>
-#include "api-commands.h"
-
-#include <ctype.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <errno.h>
 
-#include "led-task/led-task.h"
-
-// Число без знака из десятичной записи. false — в записи не только цифры
-// или число не помещается в uint32_t.
 static bool parse_u32(const char *text, uint32_t *value)
 {
     if (!isdigit((unsigned char)text[0]))
@@ -33,8 +29,6 @@ static bool parse_u32(const char *text, uint32_t *value)
     return true;
 }
 
-// --- Обработчики команд (callbacks) ---
-
 static void clbk_info(const command_t *command)
 {
     device_info_t info;
@@ -47,9 +41,7 @@ static void clbk_info(const command_t *command)
     printf("board: %s\n", info.board);
     printf("serial: %s\n", info.serial);
     printf("chip: manufacturer 0x%03x, part 0x%04x, revision %u\n",
-           (unsigned)info.manufacturer,
-           (unsigned)info.part,
-           (unsigned)info.revision);
+           (unsigned)info.manufacturer, (unsigned)info.part, (unsigned)info.revision);
     printf("pico-sdk: %s\n", info.sdk_version);
 }
 
@@ -98,14 +90,9 @@ static void clbk_pi(const command_t *command)
 
     switch (pi_task_get_state())
     {
-    case PI_STATE_NOT_STARTED:
-        printf("pi: not started\n");
-        break;
-    case PI_STATE_RUNNING:
-        printf("pi: running\n");
-        break;
-    default:
-        break;
+    case PI_STATE_NOT_STARTED: printf("pi: not started\n"); break;
+    case PI_STATE_RUNNING:     printf("pi: running\n");     break;
+    default: break;
     }
 }
 
@@ -123,10 +110,7 @@ static void clbk_profiling(const command_t *command)
         if (profiling_get(i, &result))
         {
             printf("%-10s count %-10u mean %.2f us  max %u us\n",
-                   result.name,
-                   (unsigned)result.count,
-                   result.mean,
-                   (unsigned)result.max);
+                   result.name, (unsigned)result.count, result.mean, (unsigned)result.max);
         }
     }
 #else
@@ -146,46 +130,23 @@ static void clbk_profiling_reset(const command_t *command)
 #endif
 }
 
-// Общий ответ: состояние и период светодиода
 static void print_led_state(void)
 {
     const char *state_name;
 
     switch (led_task_get_state()) {
-    case LED_STATE_OFF:
-        state_name = "off";
-        break;
-    case LED_STATE_ON:
-        state_name = "on";
-        break;
+    case LED_STATE_OFF:  state_name = "off";   break;
+    case LED_STATE_ON:   state_name = "on";    break;
     case LED_STATE_BLINK:
-    default:
-        state_name = "blink";
-        break;
+    default:             state_name = "blink"; break;
     }
 
-    printf("led: %s, period %u ms\n",
-           state_name,
-           (unsigned)led_task_get_period_ms());
+    printf("led: %s, period %u ms\n", state_name, (unsigned)led_task_get_period_ms());
 }
 
-static void clbk_led_enable(const command_t *command)
-{
-    led_task_set_state(LED_STATE_ON);
-    print_led_state();
-}
-
-static void clbk_led_disable(const command_t *command)
-{
-    led_task_set_state(LED_STATE_OFF);
-    print_led_state();
-}
-
-static void clbk_led_blink(const command_t *command)
-{
-    led_task_set_state(LED_STATE_BLINK);
-    print_led_state();
-}
+static void clbk_led_enable(const command_t *command)  { led_task_set_state(LED_STATE_ON);    print_led_state(); }
+static void clbk_led_disable(const command_t *command) { led_task_set_state(LED_STATE_OFF);   print_led_state(); }
+static void clbk_led_blink(const command_t *command)   { led_task_set_state(LED_STATE_BLINK); print_led_state(); }
 
 static void clbk_led_period(const command_t *command)
 {
@@ -197,7 +158,6 @@ static void clbk_led_period(const command_t *command)
         return;
     }
 
-    // годится ли такой период, решает задача светодиода
     if (!led_task_set_period_ms(value_ms))
     {
         printf("error: period_ms must be greater than 0\n");
@@ -215,7 +175,6 @@ static void clbk_button(const command_t *command)
 }
 
 // --- Таблица команд ---
-
 const api_command_t api_commands[] = {
     { "info",            "Print device info",           clbk_info },
     { "pi_start",        "Start pi calculation [<terms>]", clbk_pi_start },

@@ -1,15 +1,8 @@
-#include "button-task.h"
-
-#include "pico/stdlib.h"
-#include "hardware/gpio.h"
-
+#include "button-task/button-task.h"
+#include "platform/platform.h"
 #include "systime/systime.h"
-#include "led-task/led-task.h"
+#include <stdio.h>
 
-// Кнопка замыкает GP13 на землю, вывод подтянут к питанию
-#define BUTTON_PIN 13
-
-// Время дребезга: новый уровень принимается, только если продержался столько
 #define BUTTON_DEBOUNCE_US 20000
 
 typedef enum {
@@ -22,26 +15,19 @@ typedef enum {
 static button_state_t button_state;
 static uint64_t change_us;
 static uint32_t press_count;
+static button_task_callback_t on_press_cb;
 
-static bool button_level_pressed(void)
+void button_task_init(button_task_callback_t on_press)
 {
-    return gpio_get(BUTTON_PIN) == 0;
-}
-
-void button_task_init(void)
-{
-    gpio_init(BUTTON_PIN);
-    gpio_set_dir(BUTTON_PIN, GPIO_IN);
-    gpio_pull_up(BUTTON_PIN);
-
     button_state = BUTTON_STATE_RELEASED;
     change_us = 0;
     press_count = 0;
+    on_press_cb = on_press;
 }
 
 void button_task_handle(void)
 {
-    bool pressed = button_level_pressed();
+    bool pressed = platform_button_read(); // Читаем через модуль железа
     uint64_t now_us = systime_us();
 
     switch (button_state)
@@ -63,7 +49,11 @@ void button_task_handle(void)
         {
             button_state = BUTTON_STATE_PRESSED;
             press_count++;
-            led_task_next_state();
+            
+            // Сообщаем о нажатии через переданный коллбэк
+            if (on_press_cb != NULL) {
+                on_press_cb();
+            }
         }
         break;
 
@@ -90,8 +80,7 @@ void button_task_handle(void)
 
 bool button_task_is_pressed(void)
 {
-    return button_state == BUTTON_STATE_PRESSED
-        || button_state == BUTTON_STATE_RELEASING;
+    return button_state == BUTTON_STATE_PRESSED || button_state == BUTTON_STATE_RELEASING;
 }
 
 uint32_t button_task_get_press_count(void)
