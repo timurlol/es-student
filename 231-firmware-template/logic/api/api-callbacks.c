@@ -124,6 +124,7 @@ static void clbk_profiling_reset(const command_t *command)
 #if PROFILING_ENABLED
     (void)command;
     profiling_reset();
+    printf("profiling reset\n");
 #else
     (void)command;
     printf("profiling is disabled in this build\n");
@@ -176,6 +177,7 @@ static void clbk_button(const command_t *command)
 
 // --- Таблица команд ---
 const api_command_t api_commands[] = {
+    { "help",            "list of commands",            NULL },
     { "info",            "Print device info",           clbk_info },
     { "pi_start",        "Start pi calculation [<terms>]", clbk_pi_start },
     { "pi",              "Print pi result or state",    clbk_pi },

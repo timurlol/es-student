@@ -42,3 +42,4 @@ void log_prefix(const char *level, const char *function, int line);
             printf(__VA_ARGS__);                    \
         }                                           \
     } while (0)
+    
