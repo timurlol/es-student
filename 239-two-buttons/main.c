@@ -34,8 +34,11 @@ int main()
 
     led_task_init();
 
-    button_task_init(BUTTON_1, led_task_next_state);
-    button_task_init(BUTTON_2, led_task_next_period);
+    // Первая кнопка: короткое — следующее состояние, долгое — мигание
+    button_task_init(BUTTON_1, led_task_next_state, led_task_blink);
+    // Вторая кнопка: короткое — следующий период, долгого нет (NULL)
+    button_task_init(BUTTON_2, led_task_next_period, NULL);
+    
     pi_task_init();
     stdio_text_protocol_init();
 
