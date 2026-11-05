@@ -24,7 +24,6 @@ target_include_directories(platform PUBLIC
 target_link_libraries(platform PRIVATE
     pico_stdlib
 )
-
 # --- Логика прибора: задачи и команды, без SDK ---
 add_library(logic STATIC
     logic/api/api.c
