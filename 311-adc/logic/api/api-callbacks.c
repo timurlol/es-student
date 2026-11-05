@@ -7,12 +7,15 @@
 #include "button-task/button-task.h"
 #include "pi-task/pi-task.h"
 #include "platform/platform.h"
+#include "telemetry-task/telemetry-task.h"
 
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <errno.h>
+
+#define TELEMETRY_DEFAULT_PERIOD_MS 100
 
 static bool parse_u32(const char *text, uint32_t *value)
 {
@@ -188,6 +191,44 @@ static void cmd_get_temp(const command_t *command)
     printf("temp: %.1f C\n", platform_temp_read() );
 }
 
+// Печать записи, которую задача телеметрии передает через коллбэк
+void api_print_telemetry(const telemetry_record_t *record)
+{
+    printf("tm: %llu %.3f %.1f\n", 
+           (unsigned long long)record->time_us, 
+           record->voltage_v, 
+           record->temp_c);
+}
+
+static void clbk_tm_start(const command_t *command)
+{
+    uint32_t period_ms = TELEMETRY_DEFAULT_PERIOD_MS;
+
+    if (command->argc == 1) {
+        if (!parse_u32(command->argv[0], &period_ms)) {
+            printf("error: usage tm_start [<period_ms>]\n");
+            return;
+        }
+    } else if (command->argc > 1) {
+        printf("error: usage tm_start [<period_ms>]\n");
+        return;
+    }
+
+    // Задача сама отклонит период < 10 мс
+    if (!telemetry_task_start(period_ms)) {
+        printf("error: period_ms must be at least 10\n");
+        return;
+    }
+
+    printf("telemetry: started, period %u ms\n", (unsigned)period_ms);
+}
+
+static void clbk_tm_stop(const command_t *command)
+{
+    telemetry_task_stop();
+    printf("telemetry: stopped\n");
+}
+
 // --- Таблица команд ---
 const api_command_t api_commands[] = {
     { "help",            "list of commands",            NULL },
@@ -204,6 +245,8 @@ const api_command_t api_commands[] = {
     { "profiling",       "Prints the results of all initialized stopwatches since the last reset in ms", clbk_profiling },
     { "get_voltage", "voltage on GP26, ADC input 0", clbk_get_voltage },
     { "get_temp", "chip temperature, degrees Celsius", cmd_get_temp },
+    { "tm_start",        "Start telemetry [<period_ms>]", clbk_tm_start },
+    { "tm_stop",         "Stop telemetry",              clbk_tm_stop },
 };
 
 const uint32_t api_command_count = sizeof(api_commands) / sizeof(api_commands[0]);

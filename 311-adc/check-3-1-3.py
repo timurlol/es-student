@@ -1,5 +1,5 @@
-# Задание 3.1.2: спрашивает у платы паспорт, трижды температуру кристалла и напряжение на входе АЦП,
-# записывает обмен в файл device-3-1-2.log.
+# Задание 3.1.3: запускает и останавливает телеметрию с разными периодами, пробует неверные
+# аргументы и записывает обмен в файл device-3-1-3.log.
 
 import time
 from datetime import datetime
@@ -10,18 +10,23 @@ from serial.tools import list_ports
 VENDOR_ID = 0x2E8A
 PRODUCT_ID = 0x000A
 
-TASK = "3.1.2"
+TASK = "3.1.3"
 PROJECT = "311-adc"
-LOG_NAME = "device-3-1-2.log"
+LOG_NAME = "device-3-1-3.log"
 BACKSPACE = "\x7f"
 # Кадр команды и сколько секунд слушать ответ.
 STEPS = [
     ("\r", 0.5),
+    ("help\r", 1),
     ("info\r", 1),
-    ("get_temp\r", 1),
-    ("get_temp\r", 1),
-    ("get_temp\r", 1),
-    ("get_voltage\r", 1),
+    ("tm_start 50\r", 2),
+    ("tm_stop\r", 1),
+    ("tm_start\r", 1.5),
+    ("tm_stop\r", 1),
+    ("tm_start 5\r", 0.5),
+    ("tm_start 10 20\r", 0.5),
+    ("tm_start 5x\r", 0.5),
+    ("get_voltage\r", 0.5),
 ]
 
 
