@@ -182,6 +182,12 @@ static void clbk_get_voltage(const command_t *command)
     printf("voltage: %.3f V\n", platform_voltage_read() );
 }
 
+// температура у platform, ответ temp: <температура> C
+static void cmd_get_temp(const command_t *command)
+{
+    printf("temp: %.1f C\n", platform_temp_read() );
+}
+
 // --- Таблица команд ---
 const api_command_t api_commands[] = {
     { "help",            "list of commands",            NULL },
@@ -197,6 +203,7 @@ const api_command_t api_commands[] = {
     { "profiling_reset", "Reset all stopwatches",       clbk_profiling_reset },
     { "profiling",       "Prints the results of all initialized stopwatches since the last reset in ms", clbk_profiling },
     { "get_voltage", "voltage on GP26, ADC input 0", clbk_get_voltage },
+    { "get_temp", "chip temperature, degrees Celsius", cmd_get_temp },
 };
 
 const uint32_t api_command_count = sizeof(api_commands) / sizeof(api_commands[0]);

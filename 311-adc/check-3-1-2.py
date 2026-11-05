@@ -1,5 +1,5 @@
-# Задание 3.1.1: спрашивает у платы справку, паспорт и трижды напряжение на входе АЦП,
-# записывает обмен в файл device-3-1-1.log.
+# Задание 3.1.2: спрашивает у платы паспорт, трижды температуру кристалла и напряжение на входе АЦП,
+# записывает обмен в файл device-3-1-2.log.
 
 import time
 from datetime import datetime
@@ -10,17 +10,17 @@ from serial.tools import list_ports
 VENDOR_ID = 0x2E8A
 PRODUCT_ID = 0x000A
 
-TASK = "3.1.1"
+TASK = "3.1.2"
 PROJECT = "311-adc"
-LOG_NAME = "device-3-1-1.log"
+LOG_NAME = "device-3-1-2.log"
 BACKSPACE = "\x7f"
 # Кадр команды и сколько секунд слушать ответ.
 STEPS = [
     ("\r", 0.5),
-    ("help\r", 1),
     ("info\r", 1),
-    ("get_voltage\r", 1),
-    ("get_voltage\r", 1),
+    ("get_temp\r", 1),
+    ("get_temp\r", 1),
+    ("get_temp\r", 1),
     ("get_voltage\r", 1),
 ]
 
