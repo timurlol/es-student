@@ -17,6 +17,7 @@
 
 // ТЗ 2.3: Кнопка замыкает GP15 на землю. Светодиод — встроенный.
 #define PLATFORM_LED_PIN 25
+#define PLATFORM_CAPACITOR_PIN 22
 #define PLATFORM_BUTTON_PIN 13
 
 void platform_init(void)
@@ -25,6 +26,9 @@ void platform_init(void)
 
     gpio_init(PLATFORM_LED_PIN);
     gpio_set_dir(PLATFORM_LED_PIN, GPIO_OUT);
+
+    gpio_init(PLATFORM_CAPACITOR_PIN);
+    gpio_set_dir(PLATFORM_CAPACITOR_PIN, GPIO_OUT);
 
     gpio_init(PLATFORM_BUTTON_PIN);
     gpio_set_dir(PLATFORM_BUTTON_PIN, GPIO_IN);
@@ -39,6 +43,11 @@ void platform_init(void)
 void platform_led_set(bool on)
 {
     gpio_put(PLATFORM_LED_PIN, on);
+}
+
+void platform_charge_set(bool on)
+{
+    gpio_put(PLATFORM_CAPACITOR_PIN, on);
 }
 
 bool platform_button_read(void)

@@ -16,6 +16,8 @@
 #include <errno.h>
 
 #define TELEMETRY_DEFAULT_PERIOD_MS 100
+#define CHARGE_STATE_ON true
+#define CHARGE_STATE_OFF false
 
 static bool parse_u32(const char *text, uint32_t *value)
 {
@@ -149,6 +151,17 @@ static void print_led_state(void)
     printf("led: %s, period %u ms\n", state_name, (unsigned)led_task_get_period_ms());
 }
 
+static void clbk_charge_enable(const command_t *command)
+{
+    platform_charge_set(CHARGE_STATE_ON);
+    printf("charge: on\n");
+}
+static void clbk_charge_disable(const command_t *command)
+{
+    platform_charge_set(CHARGE_STATE_OFF);
+    printf("charge: off\n");
+}
+
 static void clbk_led_enable(const command_t *command)  { led_task_set_state(LED_STATE_ON);    print_led_state(); }
 static void clbk_led_disable(const command_t *command) { led_task_set_state(LED_STATE_OFF);   print_led_state(); }
 static void clbk_led_blink(const command_t *command)   { led_task_set_state(LED_STATE_BLINK); print_led_state(); }
@@ -186,7 +199,7 @@ static void clbk_get_voltage(const command_t *command)
 }
 
 // температура у platform, ответ temp: <температура> C
-static void cmd_get_temp(const command_t *command)
+static void clbk_get_temp(const command_t *command)
 {
     printf("temp: %.1f C\n", platform_temp_read() );
 }
@@ -243,10 +256,12 @@ const api_command_t api_commands[] = {
     { "button",          "Print button state and press count", clbk_button },
     { "profiling_reset", "Reset all stopwatches",       clbk_profiling_reset },
     { "profiling",       "Prints the results of all initialized stopwatches since the last reset in ms", clbk_profiling },
-    { "get_voltage", "voltage on GP26, ADC input 0", clbk_get_voltage },
-    { "get_temp", "chip temperature, degrees Celsius", cmd_get_temp },
+    { "get_voltage",     "voltage on GP26, ADC input 0", clbk_get_voltage },
+    { "get_temp",        "chip temperature, degrees Celsius", clbk_get_temp },
     { "tm_start",        "Start telemetry [<period_ms>]", clbk_tm_start },
     { "tm_stop",         "Stop telemetry",              clbk_tm_stop },
+    { "charge_on",       "Turn on the chrage",        clbk_charge_enable },
+    { "charge_off",      "Turn off the chrage",      clbk_charge_disable },
 };
 
 const uint32_t api_command_count = sizeof(api_commands) / sizeof(api_commands[0]);
