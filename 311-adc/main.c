@@ -11,8 +11,7 @@
 #include <stdio.h>
 #include <string.h>
 
-typedef enum {
-    STOPWATCH_LOOP = 0,
+Typedef enum { STOPWATCH_LOOP = 0,
     STOPWATCH_COMMAND,
     STOPWATCH_LED,
     STOPWATCH_BUTTON,
