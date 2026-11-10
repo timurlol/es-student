@@ -195,12 +195,22 @@ static void clbk_button(const command_t *command)
 // напряжение на GP26 у platform, ответ voltage: <напряжение> V
 static void clbk_get_voltage(const command_t *command)
 {
+    if (platform_adc_busy())
+    {
+        printf("error: adc busy\n");
+        return;
+    }
     printf("voltage: %.3f V\n", platform_voltage_read() );
 }
 
 // температура у platform, ответ temp: <температура> C
 static void clbk_get_temp(const command_t *command)
 {
+    if (platform_adc_busy())
+    {
+        printf("error: adc busy\n");
+        return;
+    }
     printf("temp: %.1f C\n", platform_temp_read() );
 }
 
@@ -215,6 +225,13 @@ void api_print_telemetry(const telemetry_record_t *record)
 
 static void clbk_tm_start(const command_t *command)
 {
+
+    if (platform_adc_busy())
+    {
+        printf("error: adc busy\n");
+        return;
+    }
+
     uint32_t period_ms = TELEMETRY_DEFAULT_PERIOD_MS;
 
     if (command->argc == 1) {
@@ -270,6 +287,68 @@ static void clbk_timer_blink_stop(const command_t *command)
     printf("timer_blink: stopped, %u toggles\n", (unsigned)toggles);
 }
 
+static void clbk_cap_start(const command_t *command)
+{
+    uint32_t count, period_us;
+
+    if (command->argc != 2 || 
+        !parse_u32(command->argv[0], &count) || 
+        !parse_u32(command->argv[1], &period_us))
+    {
+        printf("error: usage cap_start <N> <period_us>\n");
+        return;
+    }
+
+    if (count == 0 || count > PLATFORM_CAPTURE_MAX || period_us < 10)
+    {
+        printf("error: N must be 1..2000, period_us at least 10\n");
+        return;
+    }
+
+    // Если идет телеметрия или АЦП занят, запускать захват нельзя
+    if (telemetry_task_get_state() == TELEMETRY_STATE_RUN || platform_adc_busy()) 
+    {
+        printf("error: adc busy\n");
+        return;
+    }
+
+    if (!platform_capture_start(count, period_us))
+    {
+        printf("error: adc busy\n");
+        return;
+    }
+
+    printf("capture: started, %u samples, period %u us\n", (unsigned)count, (unsigned)period_us);
+}
+
+static void clbk_cap_dump(const command_t *command)
+{
+    if (!platform_capture_done()) {
+        printf("error: no capture\n");
+        return;
+    }
+
+    platform_capture_t cap;
+    platform_capture_get(&cap);
+
+    printf("capture: %u samples, period %u us, interval %u..%u us, handler %.1f %%\n",
+           (unsigned)cap.count, (unsigned)cap.period_us, 
+           (unsigned)cap.min_interval_us, (unsigned)cap.max_interval_us, 
+           cap.handler_percent);
+
+    // Вывод по 16 отсчетов в строке
+    for (uint32_t i = 0; i < cap.count; i++) {
+        if (i % 16 == 0) {
+            printf("cap:");
+        }
+        printf(" %u", cap.samples[i]);
+        
+        if (i % 16 == 15 || i == cap.count - 1) {
+            printf("\n");
+        }
+    }
+}
+
 // --- Таблица команд ---
 const api_command_t api_commands[] = {
     { "help",            "list of commands",            NULL },
@@ -292,6 +371,8 @@ const api_command_t api_commands[] = {
     { "charge_off",      "Turn off the chrage",      clbk_charge_disable },
     { "timer_blink_start", "blink led by timer: timer_blink_start <period_ms>", clbk_timer_blink_start },
     { "timer_blink_stop",  "stop timer blink, number of toggles", clbk_timer_blink_stop },
+    { "cap_start", "Start ADC capture: cap_start <N> <period_us>", clbk_cap_start },
+    { "cap_dump",  "Dump last capture data", clbk_cap_dump },
 };
 
 const uint32_t api_command_count = sizeof(api_commands) / sizeof(api_commands[0]);
