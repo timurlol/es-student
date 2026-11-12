@@ -8,6 +8,7 @@
 #include "button-task/button-task.h"
 #include "pi-task/pi-task.h"
 #include "block-task/block-task.h"
+#include "stream-task/stream-task.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -19,7 +20,8 @@ typedef enum {
     STOPWATCH_BUTTON,
     STOPWATCH_PI,
     STOPWATCH_TELEMETRY,
-    STOPWATCH_BLOCK
+    STOPWATCH_BLOCK,
+    STOPWATCH_STREAM
 } stopwatch_id_t;
 
 int main()
@@ -36,6 +38,7 @@ int main()
     profiling_stopwatch_init(STOPWATCH_PI,      "pi");
     profiling_stopwatch_init(STOPWATCH_TELEMETRY, "telemetry");
     profiling_stopwatch_init(STOPWATCH_BLOCK, "block");
+    profiling_stopwatch_init(STOPWATCH_STREAM, "stream");
 
     led_task_init();
     // Связь кнопки и светодиода задаётся здесь, а не внутри задачи кнопки
@@ -43,6 +46,7 @@ int main()
     pi_task_init();
     telemetry_task_init(api_print_telemetry); 
     stdio_text_protocol_init();
+    stream_task_init(api_send_frame);
 
     while(1)
     {
@@ -67,6 +71,10 @@ int main()
         profiling_start(STOPWATCH_BLOCK);
         block_task_handle();
         profiling_stop(STOPWATCH_BLOCK);
+
+        profiling_start(STOPWATCH_STREAM);
+        stream_task_handle();
+        profiling_stop(STOPWATCH_STREAM);
 
         profiling_start(STOPWATCH_COMMAND);
         const command_t *command = stdio_text_protocol_handle();

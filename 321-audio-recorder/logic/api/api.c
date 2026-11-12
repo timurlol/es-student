@@ -2,6 +2,7 @@
 #include "api/api-commands.h"
 #include <stdio.h>
 #include <string.h>
+#include "stream-task/stream-task.h"
 
 void api_handle(const command_t *command)
 {

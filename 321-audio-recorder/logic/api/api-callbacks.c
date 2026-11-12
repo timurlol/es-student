@@ -9,6 +9,7 @@
 #include "platform/platform.h"
 #include "telemetry-task/telemetry-task.h"
 #include "block-task/block-task.h"
+#include "stream-task/stream-task.h"
 
 #include <stdio.h>
 #include <stdint.h>
@@ -17,6 +18,7 @@
 #include <errno.h>
 
 #define TELEMETRY_DEFAULT_PERIOD_MS 100
+#define STREAM_BLINK_PERIOD_MS 250
 #define CHARGE_STATE_ON true
 #define CHARGE_STATE_OFF false
 
@@ -34,6 +36,13 @@ static bool parse_u32(const char *text, uint32_t *value)
 
     *value = (uint32_t)number;
     return true;
+}
+
+// Реализация отправки кадра
+void api_send_frame(const stream_header_t *header, const uint8_t *data, uint32_t bytes)
+{
+    platform_write(header, sizeof(*header));
+    platform_write(data, bytes);
 }
 
 static void clbk_info(const command_t *command)
@@ -403,6 +412,53 @@ static void clbk_dma_cap(const command_t *command)
     }
 }
 
+static void clbk_stream_start(const command_t *command)
+{
+    uint8_t bits = 16;
+
+    if (command->argc == 1) {
+        uint32_t val;
+        if (!parse_u32(command->argv[0], &val) || (val != 8 && val != 16)) {
+            printf("error: usage stream_start [8|16]\n");
+            return;
+        }
+        bits = (uint8_t)val;
+    } else if (command->argc > 1) {
+        printf("error: usage stream_start [8|16]\n");
+        return;
+    }
+
+    if (telemetry_task_get_state() == TELEMETRY_STATE_RUN || platform_adc_busy()) {
+        printf("error: adc busy\n");
+        return;
+    }
+
+    if (!stream_task_start(bits)) {
+        printf("error: adc busy\n");
+        return;
+    }
+
+    // Запускаем индикатор и отключаем led-task, чтобы не мешал
+    platform_blink_start(STREAM_BLINK_PERIOD_MS);
+    led_task_set_state(LED_STATE_OFF);
+
+    printf("stream: started, 44100 Hz, %u bit\n", (unsigned)bits);
+}
+
+static void clbk_stream_stop(const command_t *command)
+{
+    if (stream_task_get_state() == STREAM_STATE_RUN)
+    {
+        stream_task_stop();
+        platform_blink_stop();
+        
+        printf("stream: stopped, %u frames, %u samples, %u overruns\n",
+               (unsigned)stream_task_get_frames(),
+               (unsigned)stream_task_get_samples(),
+               (unsigned)stream_task_get_overruns());
+    }
+}
+
 // --- Таблица команд ---
 const api_command_t api_commands[] = {
     { "help",            "list of commands",            NULL },
@@ -428,6 +484,8 @@ const api_command_t api_commands[] = {
     { "cap_start", "Start ADC capture: cap_start <N> <period_us>", clbk_cap_start },
     { "cap_dump",  "Dump last capture data", clbk_cap_dump },
     { "dma_cap", "Capture block via DMA: dma_cap <N>", clbk_dma_cap },
+    { "stream_start", "Start ADC stream", clbk_stream_start },
+    { "stream_stop",  "Stop ADC stream",  clbk_stream_stop },
 };
 
 const uint32_t api_command_count = sizeof(api_commands) / sizeof(api_commands[0]);
