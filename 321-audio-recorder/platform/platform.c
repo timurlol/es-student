@@ -7,6 +7,7 @@
 #include "hardware/irq.h"
 #include "hardware/pwm.h"
 #include "hardware/clocks.h"
+#include "hardware/watchdog.h"
 
 // вход АЦП: вывод GP26, канал 0
 #define ADC_PIN 26
@@ -25,8 +26,13 @@
 #define PLATFORM_BUTTON_PIN 13
 #define TONE_PIN 20
 
+// наибольший таймаут сторожевого таймера RP2040 (RP2040-E1)
+#define WATCHDOG_MAX_MS 8388
 #define ADC_CLOCK_HZ 48000000.0f
 #define TONE_COUNT_HZ 1000000
+
+static bool watchdog_reset;
+static uint32_t watchdog_restarts;
 
 static int block_channel;
 static uint16_t block_samples[PLATFORM_BLOCK_MAX];
@@ -112,6 +118,17 @@ static void on_stream_buffer(void)
 
 void platform_init(void)
 {
+    watchdog_reset = watchdog_enable_caused_reboot();
+    if (watchdog_reset)
+    {
+        watchdog_hw->scratch[0]++;
+    }
+    else
+    {
+        watchdog_hw->scratch[0] = 0;
+    }
+    watchdog_restarts = watchdog_hw->scratch[0];
+
     stdio_init_all();
 
     gpio_init(PLATFORM_LED_PIN);
@@ -148,6 +165,29 @@ void platform_init(void)
 
     adc_init();
     adc_gpio_init(ADC_PIN);
+}
+
+bool platform_watchdog_enable(uint32_t timeout_ms)
+{
+    if (timeout_ms == 0 || timeout_ms > WATCHDOG_MAX_MS)
+    {
+        return false;
+    }
+
+    // true — не считать, пока ядро остановлено отладчиком
+    watchdog_enable(timeout_ms, true);
+    return true;
+}
+
+void platform_watchdog_feed(void)
+{
+    watchdog_update();
+}
+
+bool platform_watchdog_caused_reset(uint32_t *restarts)
+{
+    *restarts = watchdog_restarts;
+    return watchdog_reset;
 }
 
 bool platform_stream_start(uint8_t bits)

@@ -482,6 +482,49 @@ static void clbk_generate_tone(const command_t *command)
     }
 }
 
+static void clbk_wdt_enable(const command_t *command)
+{
+    uint32_t timeout_ms;
+
+    if (command->argc != 1 || !parse_u32(command->argv[0], &timeout_ms))
+    {
+        printf("error: usage wdt_enable <timeout_ms>\n");
+        return;
+    }
+
+    if (!platform_watchdog_enable(timeout_ms))
+    {
+        printf("error: timeout_ms must be 1..8388\n");
+        return;
+    }
+
+    printf("wdt: enabled, timeout %u ms\n", (unsigned)timeout_ms);
+}
+
+static void clbk_hang(const command_t *command)
+{
+    (void)command;
+    printf("hang: superloop stopped\n");
+
+    // суперцикл больше не идёт, прерывания приходят как прежде
+    while (1)
+    {
+    }
+}
+
+static void clbk_reset_reason(const command_t *command)
+{
+    (void)command;
+    uint32_t restarts;
+    bool wdt = platform_watchdog_caused_reset(&restarts);
+
+    if (wdt) {
+        printf("reset: watchdog, restarts %u\n", (unsigned)restarts);
+    } else {
+        printf("reset: other, restarts %u\n", (unsigned)restarts);
+    }
+}
+
 // --- Таблица команд ---
 const api_command_t api_commands[] = {
     { "help",            "list of commands",            NULL },
@@ -511,6 +554,9 @@ const api_command_t api_commands[] = {
     { "stream_stop",  "Stop ADC stream",  clbk_stream_stop },
     { "dma_cap", "Capture block via DMA: dma_cap <N>", clbk_dma_cap },
     { "generate_tone", "Test tone on GP20: generate_tone <Hz>", clbk_generate_tone },
+    { "wdt_enable",   "Enable watchdog: wdt_enable <timeout_ms>", clbk_wdt_enable },
+    { "hang",         "Hang the superloop",                       clbk_hang },
+    { "reset_reason", "Print reason of last reset",               clbk_reset_reason },
 };
 
 const uint32_t api_command_count = sizeof(api_commands) / sizeof(api_commands[0]);
