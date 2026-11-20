@@ -5,6 +5,8 @@
 #include "hardware/adc.h"
 #include "hardware/dma.h"
 #include "hardware/irq.h"
+#include "hardware/pwm.h"
+#include "hardware/clocks.h"
 
 // вход АЦП: вывод GP26, канал 0
 #define ADC_PIN 26
@@ -21,8 +23,10 @@
 #define PLATFORM_LED_PIN 25
 #define PLATFORM_CAPACITOR_PIN 22
 #define PLATFORM_BUTTON_PIN 13
+#define TONE_PIN 20
 
 #define ADC_CLOCK_HZ 48000000.0f
+#define TONE_COUNT_HZ 1000000
 
 static int block_channel;
 static uint16_t block_samples[PLATFORM_BLOCK_MAX];
@@ -120,9 +124,6 @@ void platform_init(void)
     gpio_set_dir(PLATFORM_BUTTON_PIN, GPIO_IN);
     gpio_pull_up(PLATFORM_BUTTON_PIN);
 
-    adc_init();
-    adc_gpio_init(ADC_PIN);
-
     adc_set_temp_sensor_enabled(true);
 
     // Настройка канала DMA для блока
@@ -136,6 +137,17 @@ void platform_init(void)
     stream_channels[1] = dma_claim_unused_channel(true);
     irq_set_exclusive_handler(DMA_IRQ_0, on_stream_buffer);
     irq_set_enabled(DMA_IRQ_0, true);
+
+    //инициализация вывода ШИМ
+    gpio_set_function(TONE_PIN, GPIO_FUNC_PWM);
+    uint tone_slice = pwm_gpio_to_slice_num(TONE_PIN);
+    pwm_set_clkdiv(tone_slice, (float)clock_get_hz(clk_sys) / TONE_COUNT_HZ);
+    pwm_set_wrap(tone_slice, 0);
+    pwm_set_gpio_level(TONE_PIN, 0);
+    pwm_set_enabled(tone_slice, true);
+
+    adc_init();
+    adc_gpio_init(ADC_PIN);
 }
 
 bool platform_stream_start(uint8_t bits)
@@ -274,6 +286,24 @@ void platform_led_set(bool on)
 void platform_charge_set(bool on)
 {
     gpio_put(PLATFORM_CAPACITOR_PIN, on);
+}
+
+bool platform_tone_set(uint32_t freq_hz)
+{
+    if (freq_hz == 0) {
+        pwm_set_gpio_level(TONE_PIN, 0);
+        return true;
+    }
+
+    if (freq_hz < 20 || freq_hz > 20000) {
+        return false;
+    }
+
+    // период в микросекундах: 1 000 000 / freq_hz
+    uint32_t period_us = TONE_COUNT_HZ / freq_hz;
+    pwm_set_wrap(pwm_gpio_to_slice_num(TONE_PIN), (uint16_t)(period_us - 1));
+    pwm_set_gpio_level(TONE_PIN, (uint16_t)(period_us / 2));
+    return true;
 }
 
 bool platform_button_read(void)

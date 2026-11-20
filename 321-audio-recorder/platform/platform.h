@@ -47,6 +47,9 @@ void platform_charge_set(bool on);
 // нажата ли кнопка сейчас, без подавления дребезга
 bool platform_button_read(void);
 
+// 0 — тон выключен, на выводе снова ноль; false — частота вне 20..20000 Гц
+bool platform_tone_set(uint32_t freq_hz);
+
 // напряжение на входе АЦП, выводе GP26, в вольтах
 float platform_voltage_read(void);
 

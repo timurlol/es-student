@@ -459,6 +459,29 @@ static void clbk_stream_stop(const command_t *command)
     }
 }
 
+static void clbk_generate_tone(const command_t *command)
+{
+    uint32_t freq_hz;
+
+    if (command->argc != 1 || !parse_u32(command->argv[0], &freq_hz))
+    {
+        printf("error: usage generate_tone <Hz>\n");
+        return;
+    }
+
+    if (!platform_tone_set(freq_hz))
+    {
+        printf("error: Hz must be 0 or 20..20000\n");
+        return;
+    }
+
+    if (freq_hz == 0) {
+        printf("tone: off\n");
+    } else {
+        printf("tone: %u Hz\n", (unsigned)freq_hz);
+    }
+}
+
 // --- Таблица команд ---
 const api_command_t api_commands[] = {
     { "help",            "list of commands",            NULL },
@@ -486,6 +509,8 @@ const api_command_t api_commands[] = {
     { "dma_cap", "Capture block via DMA: dma_cap <N>", clbk_dma_cap },
     { "stream_start", "Start ADC stream", clbk_stream_start },
     { "stream_stop",  "Stop ADC stream",  clbk_stream_stop },
+    { "dma_cap", "Capture block via DMA: dma_cap <N>", clbk_dma_cap },
+    { "generate_tone", "Test tone on GP20: generate_tone <Hz>", clbk_generate_tone },
 };
 
 const uint32_t api_command_count = sizeof(api_commands) / sizeof(api_commands[0]);
